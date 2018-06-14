@@ -1,4 +1,4 @@
-function volumeRegistrationToxo(data_dir,angle,overwrite)
+function volumeRegistrationToxo(data_dir,angle,channel,overwrite)
 % volume registration
 % need to have Mosaic file, Segmentation_resutls with *.txt position files
 cd (data_dir);
@@ -6,36 +6,46 @@ cd (data_dir);
 % options and parameters
 S=settings_handler('settingsFiles_ARAtools.yml');
 
-Options.downSampDir = [pwd, '/' S.downSampledDir '/'];
+Options.downSampDir = fullfile(data_dir,S.downSampledDir);
 Options.angle = angle;
-Options.volFname = 'dstest_25_25_02'; % sample name
-Options.originalVolumeDir = [Options.downSampDir 'originalVolume/'];
-Options.sample2AraDir =[Options.downSampDir S.sample2araDir];
-Options.registResult = '/result.1.mhd';
+
+Options.originalVolumeDir = fullfile(Options.downSampDir, 'originalVolume');
+Options.sample2AraDir =fullfile(Options.downSampDir, S.sample2araDir);
+Options.registResult = 'result.1.mhd';
 % downsample in xy and oversample in z, 25 - isitropic resolution
 
 
-% maKE INI FILE
+% maKE INI FILE or copy from home directory
 if ~exist('stitchitConf.ini')
-	makeLocalStitchItConf
+	copyfile(fullfile('~','stitchitConf.ini'),data_dir);
 end
 
 % downsample to fit the brain template
-if ~exist('./downsampled/') || overwrite
-    downsampleVolumeAndData(2,25,[],[],overwrite);
+if ~exist(Options.downSampDir)
+    downsampleVolumeAndData(channel,25,[],[],overwrite);
 else 
-    disp('Downsampled data already exist. Skip this step.\n')
+    disp('Downsampled data already exist. Skip this step.')
+end
+% find volume name
+d = dir(fullfile(Options.downSampDir,'*.mhd'));
+[~,volName] = fileparts(d.name);
+Options.volFname =volName; % sample name
+
+% copy initial data to originalVolume folder
+if ~exist(Options.originalVolumeDir)
+    mkdir(Options.originalVolumeDir);
+    copyfile(fullfile(Options.downSampDir,[Options.volFname '.*']),Options.originalVolumeDir);
 end
 
-
 % rotate sample data and move initial data to a new folder
-if ~isempty(angle) && (~exist([Options.originalVolumeDir Options.volFname '.raw']) && ...
-        exist([Options.downSampDir Options.volFname '.raw'])) || ~isempty(angle) && overwrite
- 
-        Options = rotateSampleVolume(Options);
-    
-else
-    disp('Roatated data already exist. Skip this step.\n');
+if ~isempty(angle) || ~isempty(angle) && overwrite
+    if overwrite
+        disp('Overwriting rotated volume');
+    end
+    Options = rotateSampleVolume(Options);
+   
+else %no rotation 
+    disp('Roatated data already exist or no rotation needed.');
     % downsampled
     downSampledVol = fullfile(Options.originalVolumeDir,[Options.volFname,'.mhd']);
     headerInfo=mhd_read_header(downSampledVol); 
@@ -46,11 +56,12 @@ else
     Options.RotatedVolumeSize = [headerInfo.Dimensions(2) headerInfo.Dimensions(1) headerInfo.Dimensions(3)];
 end
 
+    
 
 
 
 % register data
-if overwrite || ~exist([Options.sample2AraDir Options.registResult])
+if overwrite || ~exist(fullfile(Options.sample2AraDir, Options.registResult))
     ARAregister;
 else 
     disp('Registered data already exist. Skip this step.\n');
