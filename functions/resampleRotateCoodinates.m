@@ -3,41 +3,41 @@
 
 function [allTxT, B, A] = resampleRotateCoodinates(read_dir,frames, opt,Options)
 
-% load new txt
-k = 1; A = [];
-for frame = 1:frames
-  if frame < 10 
-      counter = strcat('00',int2str(frame)); 
-  elseif frame < 100 
-      counter = strcat('0',int2str(frame));   
-  else
-      counter = int2str(frame);   
-  end
-  name = strcat( 'section_', counter);
-    for optical = 1:opt
-        txt_name = [read_dir 'positions_', name, '_', int2str(optical),  '.txt'];
-        fileID = fopen(txt_name,'r');
-        numTotal = fscanf(fileID,'%f',[1 2]);
-        Matr = fscanf(fileID,'%f',[4 Inf]);
-        fclose(fileID);
-
-      % slice #, coor1 coor2 illum
-      a = [repmat(k,size(Matr,2),1), Matr' ];
-      A = [A;a];
-      k = k+1;
-    end
-end
+% % load new txt
+% k = 1; A = [];
+% for frame = 1:frames
+%   if frame < 10 
+%       counter = strcat('00',int2str(frame)); 
+%   elseif frame < 100 
+%       counter = strcat('0',int2str(frame));   
+%   else
+%       counter = int2str(frame);   
+%   end
+%   name = strcat( 'section_', counter);
+%     for optical = 1:opt
+%         txt_name = [read_dir 'positions_', name, '_', int2str(optical),  '.txt'];
+%         fileID = fopen(txt_name,'r');
+%         numTotal = fscanf(fileID,'%f',[1 2]);
+%         Matr = fscanf(fileID,'%f',[4 Inf]);
+%         fclose(fileID);
+% 
+%       % slice #, coor1 coor2 illum
+%       a = [repmat(k,size(Matr,2),1), Matr' ];
+%       A = [A;a];
+%       k = k+1;
+%     end
+% end
 % initial coordinates
-nameC = [read_dir 'toxo_coordinate.mat'];
-save(nameC,'A');
-
+% nameC = [read_dir 'toxo_coordinate.mat'];
+% save(nameC,'A');
+A = readtable(fullfile(read_dir,'Allpositions_filter3D.txt'));
 %% save for registration style
 
 
 % downsample according to the log file
 S=settings_handler('settingsFiles_ARAtools.yml');
-volFname = 'dstest_25_25_02'; % sample name
-downSampledTextFile = fullfile([S.downSampledDir '/originalVolume/'],[volFname,'.txt']);
+% volFname = 'dstest_25_25_02'; % sample name
+downSampledTextFile = fullfile(Options.originalVolumeDir,[Options.volFname,'.txt']);
 
 % get resolution for downsampling
 fid = fopen(downSampledTextFile);
@@ -61,23 +61,24 @@ end
 fclose(fid);
 % A(:,2:3) comes from regionprops - centroids
 % cnetroids(:,1) - columns, centroids(:,2) - rows
-B = [A(:,3) A(:,2) A(:,1)]; % [rows, cols, z]
+B = [A.Y A.X A.Z]; % [rows, cols, z]
 B(:,1:2) = B(:,1:2)./downSample(1);
 B(:,3) = B(:,3)./downSample(2);
-Show = 0;
+Show=1;
 if Show==1
-    sampleFile = fullfile([S.downSampledDir '/originalVolume/'],[volFname,'.mhd']);
+    sampleFile = fullfile(Options.originalVolumeDir,[Options.volFname,'.mhd']);
     sampleVol = mhd_read(sampleFile);
     for i = 1:3
         SliceVec = round( B([1,round(size(B,1)/2),size(B,1)],3));
         slice = SliceVec(i);
-        figure, subplot(1,2,1), imshow(imadjust(sampleVol(:,:,slice)),[])
+        figure, imshow(imadjust(sampleVol(:,:,slice)),[])
         hold on
             IND = find(round(B(:,3))==slice); % vertical coordinate
             if ~isempty(IND)
                 plot(B(IND,2),B(IND,1),'*r')% plot(cols, rows)
             end
         hold off
+        pause(1)
     end
 end
 
@@ -106,18 +107,19 @@ if ~isempty(Options.angle)
 end
 
 if Show==1
-    sampleRotFile = fullfile([S.downSampledDir],[volFname,'.mhd']);
+    sampleRotFile = fullfile(S.downSampledDir,[Options.volFname,'.mhd']);
     sampleRotVol = mhd_read(sampleRotFile);
     for i = 1:3
         SliceVec = round( B([1,round(size(B,1)/2),size(B,1)],3));
         slice = SliceVec(i);
-        figure, subplot(1,2,1), imshow(imadjust(sampleRotVol(:,:,slice)),[])
+        figure,imshow(imadjust(sampleRotVol(:,:,slice)),[])
         hold on
             IND = find(round(B(:,3))==slice); % vertical coordinate
             if ~isempty(IND)
                 plot(B(IND,2),B(IND,1),'*r')% plot(cols, rows)
             end
         hold off
+        pause(1)
     end
 end
 

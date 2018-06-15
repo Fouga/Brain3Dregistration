@@ -1,6 +1,6 @@
 function [point_coor,Options] = transformSegmentedCoordinates(Options)
 
-segmentation_dir = './Segmentation_results/';
+segmentation_dir = './stitchedImages_100/Segmentation_results_bacteria/';
 
 % read parameters
 OBJECT=returnSystemSpecificClass;
