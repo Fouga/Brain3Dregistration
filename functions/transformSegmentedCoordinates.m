@@ -6,7 +6,7 @@ OBJECT=returnSystemSpecificClass;
 param = OBJECT.readMosaicMetaData(getTiledAcquisitionParamFile);
 
 % collect txts to one file
-[coordinate_name, B] = resampleRotateCoodinates(Options.segmentationDir,param.sections,param.layers,Options);
+[coordinate_name, B] = resampleRotateCoodinates(Options);
 
 % transform the coordinates
 point_coor = applyElastixSparceCoordinates(coordinate_name,B);

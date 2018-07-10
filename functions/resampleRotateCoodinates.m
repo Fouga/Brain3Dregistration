@@ -1,10 +1,10 @@
 % amke a movie for new txt coordinates
 %sourceD = '/media/natasha/0C81DABC57F3AF06/Data/brain/20171013_brain_MT_5wka/';
 
-function [allTxT, B, A] = resampleRotateCoodinates(read_dir,frames, opt,Options)
+function [allTxT, B, A] = resampleRotateCoodinates(Options)
 
 % % load new txt
-A = readtable(fullfile(read_dir,'Allpositions_filter3D.txt'));
+A = readtable(fullfile(Options.segmentationDir,'Allpositions_filter3D.txt'));
 
 % downsample according to the log file
 S=settings_handler('settingsFiles_ARAtools.yml');
@@ -103,7 +103,7 @@ if Show==1
 end
 
 
-allTxT = [read_dir 'SegmentationCoordinates.txt'];
+allTxT = fullfile(Options.segmentationDir, 'SegmentationCoordinates.txt');
 fileID = fopen(allTxT,'w');
 fprintf(fileID,'%10.1f %10.1f %10.1f\n',B');
 fclose(fileID);

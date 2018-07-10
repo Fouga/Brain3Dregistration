@@ -40,14 +40,12 @@ fprintf('The largest amount of toxo is in the %s area.\n', structureID2name(a));
 
 IDnames = cell(1,1); k =1;
 IDnum = []; id = [];
-Id_tmp = ID_new;
 while ~isempty(ID_new)
     [a,b] = mode(ID_new);%[value, frequency]
     IDnames{k} = structureID2name(a);
     IDnum = [IDnum; b]; % number of toxo
     id = [id;a];
-    ParamTable_level = ParamTable(Id_tmp==a,:);
-    writetable(ParamTable_level,fullfile('data_analysis',sprintf('ID_level%i',level),sprintf('Objects_for_id_%i.txt',a)));
+    ParamTable_level = ParamTable(ID_new==a,:);
     k = k+1;
     ID_new(ID_new==mode(ID_new)) = [];
 end

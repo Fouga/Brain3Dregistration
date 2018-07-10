@@ -1,5 +1,7 @@
 function [Tvol, Vol] = CalculateVolumeLevel(IDlevel,vol_atlas_annotated,level)
 
+% calculate volume (number of voxels) in a specific brain part according to
+% the level of generalization
 
 % load the data base
 ARA_LIST = getAllenStructureList;
@@ -67,26 +69,3 @@ end
 
 Tvol = table(Vol','VariableNames',{'Volume'});
 
-% 
-% 
-% for i = 1:size(vol_atlas_annotated,3)
-%     slice = vol_atlas_annotated(:,:,i);
-%     slice_new = zeros(size(slice));
-%     ind = find(slice~=0);
-%     for p = 1:length(ind)
-%         a = slice(ind(p)); % ID
-%         f=find(ARA_LIST.id == a); 
-%         while ARA_LIST.depth(f)> level
-% 
-%             a = ARA_LIST.parent_structure_id(f);
-%             f=find(ARA_LIST.id == a);
-% %             ARA_LIST.depth(f)
-% %             structureID2name(a)
-%         end
-%         slice_new(ind(p)) = a;
-%     end
-%     vol_atlas_annotated_new(:,:,i) = slice_new;
-% %     figure, subplot(1,2,1), imagesc(slice)
-% %      subplot(1,2,2), imagesc(slice_new)
-% i
-% end
