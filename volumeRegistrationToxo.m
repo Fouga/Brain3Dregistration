@@ -1,4 +1,4 @@
-function volumeRegistrationToxo(data_dir,angle,channel,overwrite)
+function volumeRegistrationToxo(data_dir,segmenation_dir,angle,flipping,channel,overwrite)
 % volume registration
 % need to have Mosaic file, Segmentation_resutls with *.txt position files
 cd (data_dir);
@@ -8,10 +8,12 @@ S=settings_handler('settingsFiles_ARAtools.yml');
 
 Options.downSampDir = fullfile(data_dir,S.downSampledDir);
 Options.angle = angle;
-
+Options.flipping = flipping;
 Options.originalVolumeDir = fullfile(Options.downSampDir, 'originalVolume');
 Options.sample2AraDir =fullfile(Options.downSampDir, S.sample2araDir);
 Options.registResult = 'result.1.mhd';
+Options.segmentationDir = segmenation_dir;
+
 % downsample in xy and oversample in z, 25 - isitropic resolution
 
 
@@ -37,24 +39,27 @@ if ~exist(Options.originalVolumeDir)
     copyfile(fullfile(Options.downSampDir,[Options.volFname '.*']),Options.originalVolumeDir);
 end
 
+if ~isempty(flipping) || ~isempty(flipping) && overwrite  
+    Options = flipSampleVolume(Options);
+end
 % rotate sample data and move initial data to a new folder
 if ~isempty(angle) || ~isempty(angle) && overwrite
     if overwrite
-        disp('Overwriting rotated volume');
+        disp('Rotating the volume');
     end
     Options = rotateSampleVolume(Options);
-   
-else %no rotation 
-    disp('Roatated data already exist or no rotation needed.');
-    % downsampled
-    downSampledVol = fullfile(Options.originalVolumeDir,[Options.volFname,'.mhd']);
-    headerInfo=mhd_read_header(downSampledVol); 
-    Options.InitialVolumeSize = [headerInfo.Dimensions(2) headerInfo.Dimensions(1) headerInfo.Dimensions(3)];
-    % rotated
-    volNameRot = fullfile(Options.downSampDir,[Options.volFname,'.mhd']);
-    headerInfo=mhd_read_header(volNameRot); 
-    Options.RotatedVolumeSize = [headerInfo.Dimensions(2) headerInfo.Dimensions(1) headerInfo.Dimensions(3)];
 end
+
+    %no rotation 
+% downsampled
+downSampledVol = fullfile(Options.originalVolumeDir,[Options.volFname,'.mhd']);
+headerInfo=mhd_read_header(downSampledVol); 
+Options.InitialVolumeSize = [headerInfo.Dimensions(2) headerInfo.Dimensions(1) headerInfo.Dimensions(3)];
+% rotated
+volNameRot = fullfile(Options.downSampDir,[Options.volFname,'.mhd']);
+headerInfo=mhd_read_header(volNameRot); 
+Options.RotatedVolumeSize = [headerInfo.Dimensions(2) headerInfo.Dimensions(1) headerInfo.Dimensions(3)];
+
 
     
 
@@ -88,30 +93,32 @@ ID = [];
 for i = 1:length(point_coor(:,1))
     ID = [ID,vol_atlas_annotated(point_coor(i,2),point_coor(i,1),point_coor(i,3))];% vol(rows,cols,z)
 end
-if ~exist('./data_analysis')
-    mkdir('./data_analysis')
+if ~exist('data_analysis')
+    mkdir('data_analysis')
 end
+if ~isempty(ID)
+    % get the name
+    for level = 3:10
+        [T,IDlevel] = sortNamesByMode(ID,level);
 
-% get the name
-for level = 3:10
-    [T,IDlevel] = sortNamesByMode(ID,level);
+        [Tvol,Vol] = CalculateVolumeLevel(IDlevel,vol_atlas_annotated,level);
 
-    [Tvol,Vol] = CalculateVolumeLevel(IDlevel,vol_atlas_annotated,level);
-
-    Tlev = table(repmat(level,length(Vol),1),'VariableNames',{'Level'});
-    T = [T Tvol Tlev];
-    writetable(T,['data_analysis/' sprintf('ToxoBrainDistributionLevel_%i.xls',level)]);
-    % plots
-    [TidSort indSort] = sort(T.ID);
-    Ratio = T.number_of_toxo./T.Volume*1000;
-    figure, plot(1:length(TidSort),Ratio(indSort)), 
-    ylabel ('#toxo/Vol')
-    xlabel ('Braind ID')
-    xticks(1:length(TidSort))
-    h = num2cell(TidSort);
-    xticklabels(h)
-    savefig(['data_analysis/' sprintf('ToxoBrainDistributionLevel_%i.fig',level)])
-    close all
+        Tlev = table(repmat(level,length(Vol),1),'VariableNames',{'Level'});
+        T = [T Tvol Tlev];
+        writetable(T,['data_analysis/' sprintf('ToxoBrainDistributionLevel_%i.xls',level)]);
+        % plots
+        [TidSort indSort] = sort(T.ID);
+        Ratio = T.number_of_toxo./T.Volume*1000;
+        figure, plot(1:length(TidSort),Ratio(indSort)), 
+        ylabel ('#toxo/Vol')
+        xlabel ('Braind ID')
+        xticks(1:length(TidSort))
+        h = num2cell(TidSort);
+        xticklabels(h)
+        savefig(['data_analysis/' sprintf('ToxoBrainDistributionLevel_%i.fig',level)])
+        close all
+    end
+else
+    disp('NO objects found')
 end
-
 

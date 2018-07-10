@@ -4,35 +4,7 @@
 function [allTxT, B, A] = resampleRotateCoodinates(read_dir,frames, opt,Options)
 
 % % load new txt
-% k = 1; A = [];
-% for frame = 1:frames
-%   if frame < 10 
-%       counter = strcat('00',int2str(frame)); 
-%   elseif frame < 100 
-%       counter = strcat('0',int2str(frame));   
-%   else
-%       counter = int2str(frame);   
-%   end
-%   name = strcat( 'section_', counter);
-%     for optical = 1:opt
-%         txt_name = [read_dir 'positions_', name, '_', int2str(optical),  '.txt'];
-%         fileID = fopen(txt_name,'r');
-%         numTotal = fscanf(fileID,'%f',[1 2]);
-%         Matr = fscanf(fileID,'%f',[4 Inf]);
-%         fclose(fileID);
-% 
-%       % slice #, coor1 coor2 illum
-%       a = [repmat(k,size(Matr,2),1), Matr' ];
-%       A = [A;a];
-%       k = k+1;
-%     end
-% end
-% initial coordinates
-% nameC = [read_dir 'toxo_coordinate.mat'];
-% save(nameC,'A');
 A = readtable(fullfile(read_dir,'Allpositions_filter3D.txt'));
-%% save for registration style
-
 
 % downsample according to the log file
 S=settings_handler('settingsFiles_ARAtools.yml');
@@ -88,7 +60,14 @@ ImsizeBefore = Options.InitialVolumeSize(1:2)';% [cols, rows]
 ImsizeBefore = [ImsizeBefore(2),ImsizeBefore(1)]';
 ImsizeAfter = Options.RotatedVolumeSize(1:2)';
 ImsizeAfter = [ImsizeAfter(2),ImsizeAfter(1)]';
+% flip if needed
+if Options.flipping==1 && ~isempty(Options.flipping)
+%     B(:,1) = Options.InitialVolumeSize(1)-B(:,1)+1;
+    B(:,2) = Options.InitialVolumeSize(2)-B(:,2)+1;
 
+    B(:,3) = Options.InitialVolumeSize(3)-B(:,3)+1;
+    
+end
 % rotate if needed
 if ~isempty(Options.angle)
     angle = Options.angle;% countreclockwise rotation
